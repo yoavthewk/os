@@ -38,5 +38,5 @@ gdt_descriptor:
     dd gdt_null ; address (32 bit)
 
 ; define some constants for later use
-CODE_SEG equ gdt_code - gdt_null
-DATA_SEG equ gdt_data - gdt_null
+CODE_SEG equ gdt_code - gdt_null ; 08h
+DATA_SEG equ gdt_data - gdt_null ; 10h

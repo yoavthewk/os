@@ -1,0 +1,38 @@
+OUTPUT_FORMAT(elf32-i386)
+ENTRY(_start)
+SECTIONS
+{
+    . = 0x1000;
+    .text BLOCK(4K) : ALIGN(4K) {
+        code = .;
+        *(.text)
+        *(.rodata)
+        . = ALIGN(4096);
+    }
+    .data BLOCK(4K) : ALIGN(4K)
+    {
+        data = .;
+        *(.data)
+        . = ALIGN(4096);
+    }
+	.rodata BLOCK(4K) : ALIGN(4K)
+	{
+        rodata = .;
+		*(.rodata)
+        . = ALIGN(4096);
+	}
+    .bss BLOCK(4K) : ALIGN(4K)
+    {
+        bss = .;
+        *(.bss)
+        . = ALIGN(4096);
+    }
+    end = .;
+    /DISCARD/ :
+    {
+        *(.comment)
+        *(.eh_frame)
+    }
+
+    LMA_data = LOADADDR(.data); 
+}

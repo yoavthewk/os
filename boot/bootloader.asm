@@ -1,15 +1,12 @@
-; we're loaded at 0000:7c00 or 7c00:0000
+; we're loaded at 0000:7c00 or 07c0:0000
 ; therefore we use org to set this as 
 ; our base address.
 [org 0x7c00]
 
 ; set our kernel to 0x1000 address.
-KERNEL_START equ 0x1000 
+KERNEL_START equ 0x1000
 
-[bits 16]
 start:
-    cld
-
     mov [BOOT_DRIVE], dl ; save the boot drive if need be.
 
     mov sp, 0x9c00 ; set our stack to a convenient address (enough space to push).
@@ -30,6 +27,10 @@ start:
 hang:
     jmp $
 
+%include "boot/disk.asm"
+%include "boot/gdt.asm"
+%include "boot/print.asm"
+
 [bits 16]
 load_kernel:
     mov si, LOADING_KERNEL
@@ -38,7 +39,7 @@ load_kernel:
     mov bx, KERNEL_START
     ; the number of sectors to read.
     ; each sector is 512 bytes.
-    ; 0x20 * 512 = 16KB of Kernel Code.
+    ; 20h * 512 = 16KB of Kernel Code.
     ; might need to increment later on.
     mov dh, 0x20 
     mov dl, [BOOT_DRIVE] ; if it somehow gets overriden.
@@ -46,9 +47,6 @@ load_kernel:
 
     ; print end message.
     mov si, LOADED_KERNEL
-    call print
-
-    mov si, KERNEL_START
     call print
 
     call pm_switch ; switch to PM and eventually jump to init_kernel
@@ -61,7 +59,7 @@ pm_switch:
 
     ; load GDT
     lgdt [gdt_descriptor]
-
+    
     ; enable PM in cr0
     mov eax, cr0
     or eax, 1
@@ -71,6 +69,7 @@ pm_switch:
 
     ; flush CPU pipeline by making FAR jump.
     jmp CODE_SEG:pm_init
+
 
 [bits 32]
 pm_init:
@@ -83,13 +82,24 @@ pm_init:
 
     mov esp, 0x90000
 
+    call pm_begin
+
+pm_begin:
+    ; print that we switched.
+    mov si, PROTECTED_MODE_BOOT
+    call pm_print
+
+    ; call the kernel. 
+    ; if we are ever returned the control, hang.
+    call KERNEL_START
+    jmp hang
+
+BOOT_DRIVE db 0
 REAL_MODE_BOOT db 'Booted in 16-bit Real Mode...', 0
 LOADING_KERNEL db 'Loading kernel from disk @ 0x1000...', 0
-LOADED_KERNEL db 'Kernel Loaded...'
-BOOT_DRIVE db 0
-
-%include "boot/print.asm"
-%include "boot/disk.asm"
+LOADED_KERNEL db 'Kernel Loaded...', 0
+PROTECTED_MODE_BOOT db 'Switched to 32-bit Protected Mode...', 0
+SWITCHING_MODE db 'Switching to Protected Mode...', 0
 
 times 510-($-$$) db 0
 dw 0xaa55

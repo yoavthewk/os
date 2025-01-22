@@ -5,7 +5,7 @@ disk_read:
     mov ch, 0
     mov cl, 0x02 ; sectors start from one. sector 1 is the bootloader.
     mov dh, 0
-
+    
     int 0x13
     jc disk_read_error
 
@@ -22,12 +22,12 @@ disk_read:
 disk_read_error:
     mov si, DISK_READ_ERROR
     call print
-    jmp hang
+    jmp disk_hang
 
 sector_read_error:
     mov si, SECTOR_READ_ERROR
     call print
-    jmp hang
+    jmp disk_hang
 
 disk_hang:
     jmp $
