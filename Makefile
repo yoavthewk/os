@@ -4,7 +4,7 @@ C_SOURCES = $(wildcard kernel/*.c drivers/*.c cpu/*.c libc/*.c)
 HEADERS = $(wildcard kernel/*.h drivers/*.h cpu/*.h libc/*.h)
 OBJ = ${C_SOURCES:.c=.o}
 
-CC = /usr/local/bin/i386elfgcc/bin/i386-elf-gcc
+CC = /usr/local/i386elfgcc/bin/i386-elf-gcc
 GDB = /bin/gdb
 CFLAGS = -g -m32 -ffreestanding
 
@@ -35,4 +35,4 @@ $(BUILD)/%.o: $(C_DIRS)/%.c ${HEADERS}
 	${CC} ${CFLAGS} -c $< -o $@
 
 clean:
-	rm */*.o build/*
+	rm */*.o

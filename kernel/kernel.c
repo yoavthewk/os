@@ -12,4 +12,5 @@
 void kmain(void) {
     clear_terminal();
     kprint("Hello, World! :)\nThis is a newline!");
+    while(1);
 }

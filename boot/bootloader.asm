@@ -41,7 +41,7 @@ load_kernel:
     ; each sector is 512 bytes.
     ; 20h * 512 = 16KB of Kernel Code.
     ; might need to increment later on.
-    mov dh, 0x20 
+    mov dh, 0x20
     mov dl, [BOOT_DRIVE] ; if it somehow gets overriden.
     call disk_read
 
@@ -103,5 +103,3 @@ SWITCHING_MODE db 'Switching to Protected Mode...', 0
 
 times 510-($-$$) db 0
 dw 0xaa55
-times 512 db 'Y'
-times 512 db 'A'

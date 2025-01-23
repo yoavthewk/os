@@ -6,7 +6,7 @@
 
 volatile uint16_t* terminal = (uint16_t*)TERMINAL_MEMORY;
 
-uint8_t terminal_col = 1;
+uint8_t terminal_col = 0;
 uint8_t terminal_row = 0;
 
 /* Clear the whole terminal. */
