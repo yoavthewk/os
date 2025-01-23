@@ -23,9 +23,28 @@ enum vga_color {
 	VGA_COLOR_WHITE = 15,
 };
 
+/* I/O Ports. */
+#define REG_SCREEN_CTRL 0x3d4
+#define REG_SCREEN_DATA 0x3d5
+
+/* I/O Regs. */
+#define CURSOR_LOC_HIGH 0x0F
+#define CURSOR_LOC_LOW 0x0E
+
+/* VGA Constants. */
+#define MAX_COLS 80
+#define MAX_ROWS 25
+#define TERMINAL_MEMORY 0xB8000
+
+/* Offset Macros. */
+#define GET_POSITION(row, col) ((row * MAX_COLS) + col)
+
 void clear_terminal(void);
-uint16_t vga_entry(char c, uint8_t color);
 void writec(char c);
 void kprint(char* str);
 void newline(void);
 void kputc(char c);
+void set_cursor_position(uint8_t row, uint8_t col);
+
+uint16_t vga_entry(char c, uint8_t color);
+uint8_t vga_color_entry(enum vga_color fg, enum vga_color bg);
