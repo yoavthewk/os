@@ -3,8 +3,11 @@
 ; our base address.
 [org 0x7c00]
 
-; set our kernel to 0x1000 address.
-KERNEL_START equ 0x1000
+; set our kernel to 0x10000 address.
+; note the value here is 0x1000, but it is shifted by four
+; due to the fact we use it in ES:BX.
+KERNEL_SEGMENT_VALUE equ 0x1000
+KERNEL_START equ 0x10000
 
 start:
     mov [BOOT_DRIVE], dl ; save the boot drive if need be.
@@ -36,7 +39,12 @@ load_kernel:
     mov si, LOADING_KERNEL
     call print
 
-    mov bx, KERNEL_START
+    push es ; save the last value.
+    ; This is a simple trick to really load our kernel at
+    ; 0x10000 using segmentation.
+    mov cx, KERNEL_SEGMENT_VALUE
+    mov es, cx
+    mov bx, 0
     ; the number of sectors to read.
     ; each sector is 512 bytes.
     ; 20h * 512 = 16KB of Kernel Code.
@@ -44,6 +52,7 @@ load_kernel:
     mov dh, 0x20
     mov dl, [BOOT_DRIVE] ; if it somehow gets overriden.
     call disk_read
+    pop es ; retrieve the last value. 
 
     ; print end message.
     mov si, LOADED_KERNEL
@@ -96,7 +105,7 @@ pm_begin:
 
 BOOT_DRIVE db 0
 REAL_MODE_BOOT db 'Booted in 16-bit Real Mode...', 0
-LOADING_KERNEL db 'Loading kernel from disk @ 0x1000...', 0
+LOADING_KERNEL db 'Loading kernel from disk @ 0x10000...', 0
 LOADED_KERNEL db 'Kernel Loaded...', 0
 PROTECTED_MODE_BOOT db 'Switched to 32-bit Protected Mode...', 0
 SWITCHING_MODE db 'Switching to Protected Mode...', 0

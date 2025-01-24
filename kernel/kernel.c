@@ -21,5 +21,10 @@ void kmain(void) {
         kprint(number);
         kprint("\n");
     }
+    for (uint32_t i = 0; i < 50; ++i) {
+        char number[4] = {0};
+        itoa(i, number);
+        kprint(number);
+    }
     while(1);
 }

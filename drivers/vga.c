@@ -76,11 +76,8 @@ void kputc(char c) {
     if (c == '\n') {
         newline();
     }
-    else {
-        ++terminal_col;
-    }
 
-    if (terminal_col >= MAX_COLS) {
+    if ((terminal_col + 1) >= MAX_COLS) {
         newline();
     }
     
@@ -90,6 +87,7 @@ void kputc(char c) {
 
     if (c != '\n') {
         writec(c);
+        ++terminal_col;
     }
 
     set_cursor_position(terminal_row, terminal_col);
