@@ -1,6 +1,7 @@
 #include <stdint.h>
-#include "../drivers/vga.h"
-#include "../libc/string/string.h"
+#include <kernel/vga.h>
+#include <libc/string.h>
+#include <arch/x86/cpu/idt.h>
 
 #if defined(__linux__)
 #error "This was not compiled using a cross-compiler."
@@ -12,19 +13,10 @@
 
 void kmain(void) {
     clear_terminal();
-    kprint("Hello, World! :)\nThis is a newline!");
-    kprint("\n\n\nAlejandro is a massive loser.");
+    kprint("Welcome!\n");
 
-    for(uint32_t i = 1; i < 100; ++i) {
-        char number[4] = {0};
-        itoa(i, number);
-        kprint(number);
-        kprint("\n");
-    }
-    for (uint32_t i = 0; i < 50; ++i) {
-        char number[4] = {0};
-        itoa(i, number);
-        kprint(number);
-    }
+    idt_assemble();
+    __asm__ volatile("int $0x2");
+
     while(1);
 }

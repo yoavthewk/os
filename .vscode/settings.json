@@ -2,6 +2,8 @@
     "files.associations": {
         "vga.h": "c",
         "string.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "comm.h": "c",
+        "idt.h": "c"
     }
 }

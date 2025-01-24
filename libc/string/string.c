@@ -1,4 +1,4 @@
-#include "string.h"
+#include <libc/string.h>
 
 uint32_t strlen(char* str){
     uint32_t len = 0;

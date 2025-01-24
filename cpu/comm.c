@@ -1,4 +1,4 @@
-#include "comm.h"
+#include <arch/x86/cpu/comm.h>
 
 void outb(uint16_t port, uint8_t val) {
     __asm__ volatile ("out %%al, %%dx" :: "a"(val), "d"(port));

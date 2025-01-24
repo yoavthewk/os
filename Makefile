@@ -1,15 +1,19 @@
 BUILD=build
+CPU=cpu
 BOOT=boot
 C_SOURCES = $(wildcard kernel/*.c cpu/*.c drivers/*.c libc/*/*.c)
+ASM_SOURCES = $(wildcard cpu/*.asm)
 HEADERS = $(wildcard kernel/*.h cpu/*.h drivers/*.h libc/*/*.h)
-OBJ = $(patsubst %.c, $(BUILD)/%.o, $(notdir $(C_SOURCES)))
+OBJ = $(patsubst %.c, $(BUILD)/%.o, $(notdir $(C_SOURCES))) \
+      $(patsubst %.asm, $(BUILD)/%.o, $(notdir $(ASM_SOURCES)))
 
 CC = /usr/local/i386elfgcc/bin/i386-elf-gcc
 GDB = /bin/gdb
-CFLAGS = -g -m32 -ffreestanding
+CFLAGS = -g -m32 -ffreestanding -Iinclude
 
 # So make knows where to look for .c files.
 vpath %.c kernel drivers cpu libc libc/string libc/memory
+vpath %.asm cpu
 
 run: $(BUILD)/os.bin
 	mkdir -p $(BUILD)
@@ -32,6 +36,9 @@ $(BUILD)/%.bin: $(BOOT)/%.asm
 	nasm $< -f bin -o $@
 
 $(BUILD)/%.o: $(BOOT)/%.asm
+	nasm $< -f elf -o $@
+
+$(BUILD)/%.o: $(CPU)/%.asm
 	nasm $< -f elf -o $@
 
 $(BUILD)/%.o: %.c ${HEADERS}

@@ -1,6 +1,6 @@
-#include "vga.h"
-#include "../cpu/comm.h"
-#include "../libc/memory/mem.h"
+#include <kernel/vga.h>
+#include <arch/x86/cpu/comm.h>
+#include <libc/mem.h>
 
 volatile uint16_t* terminal = (uint16_t*)TERMINAL_MEMORY;
 
