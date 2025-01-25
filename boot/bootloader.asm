@@ -74,8 +74,6 @@ pm_switch:
     or eax, 1
     mov cr0, eax ; enable PM in cr0.
 
-    ; TODO: enable A20 line?
-
     ; flush CPU pipeline by making FAR jump.
     jmp CODE_SEG:pm_init
 

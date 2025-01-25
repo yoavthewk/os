@@ -2,8 +2,10 @@
 #include <libc/string.h>
 #include <arch/x86/cpu/isr.h>
 #include <arch/x86/cpu/idt.h>
+#include <arch/x86/cpu/comm.h>
+#include <arch/x86/8259/pic.h>
 
-static const char* exception_labels[] = {
+static const char* __exception_labels[] = {
     "[0x00] Divide by Zero Exception",
     "[0x01] Debug Exception",
     "[0x02] Unhandled Non-maskable Interrupt",
@@ -38,11 +40,9 @@ static const char* exception_labels[] = {
     "[0x1F] Inexplicable Error"
 };
 
-void isr_handler(uint8_t exception_number) {
-    char exception[3] = { 0 };
-    itoa((uint32_t)exception_number, exception);
+void isr_handler(isr_frame_t* frame) {
     kprint("FATAL EXCEPTION: ");
-    kprint(exception);
+    kprint(__exception_labels[frame->int_no]);
     kprint("\n");
     __asm__ volatile ("cli; hlt");
     while(1);

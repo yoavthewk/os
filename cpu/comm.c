@@ -29,3 +29,8 @@ uint32_t inl(uint16_t port) {
     __asm__ volatile ("in %%dx, %%eax" : "=a"(ret) : "d"(port));
     return ret;
 }
+
+void io_wait(void)
+{
+    outb(0x80, 0);
+}

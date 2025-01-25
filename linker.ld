@@ -6,21 +6,20 @@ SECTIONS
     .text BLOCK(4K) : ALIGN(4K) {
         code = .;
         *(.text, .text.*)
-        *(.rodata)
         . = ALIGN(4096);
     }
+    .rodata BLOCK(4K) : ALIGN(4K)
+	{
+        rodata = .;
+		*(.rodata, .rodata.*)
+        . = ALIGN(4096);
+	}
     .data BLOCK(4K) : ALIGN(4K)
     {
         data = .;
         *(.data, .data.*)
         . = ALIGN(4096);
     }
-	.rodata BLOCK(4K) : ALIGN(4K)
-	{
-        rodata = .;
-		*(.rodata, .rodata.*)
-        . = ALIGN(4096);
-	}
     .bss BLOCK(4K) : ALIGN(4K)
     {
         bss = .;

@@ -4,6 +4,7 @@
         "string.h": "c",
         "stdint.h": "c",
         "comm.h": "c",
-        "idt.h": "c"
+        "idt.h": "c",
+        "isr.h": "c"
     }
 }

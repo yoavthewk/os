@@ -1,5 +1,7 @@
+#pragma once
 #include <stdint.h>
 #include <stdbool.h>
+#include <arch/x86/cpu/int.h>
 
 typedef struct {
 	uint16_t    isr_low;      // the lower 16 bits of the ISR's address
@@ -19,7 +21,13 @@ typedef struct {
 
 static bool vectors[IDT_MAX_DESCRIPTORS];
 extern void* isr_stub_table[];
+extern void* irq_stub_table[];
 
 void idt_set_descriptor(uint8_t vector, void* isr, uint8_t flags);
 
 void idt_assemble(void);
+
+void idt_install_irq_handler(uint8_t irq_vector, irq_handler_t handler);
+
+__attribute__ ((noreturn))
+void irq_handler(irq_frame_t* frame);

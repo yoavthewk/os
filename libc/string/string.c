@@ -23,10 +23,11 @@ void reverse(char* str) {
 
 void itoa(int32_t num, char* str) {
     uint32_t index = 0;
-    while(num != 0) {
+
+    do {
         str[index++] = (num % 10) + '0';
         num /= 10;
-    }
+    } while(num != 0);
 
     str[index] = '\0';
 

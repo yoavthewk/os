@@ -40,6 +40,7 @@ enum vga_color {
 #define GET_POSITION(row, col) ((row * MAX_COLS) + col)
 
 void clear_terminal(void);
+void kbackspace(void);
 void writec(char c);
 void kprint(char* str);
 void newline(void);

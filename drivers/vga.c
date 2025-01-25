@@ -36,6 +36,24 @@ void clear_terminal() {
     set_cursor_position(terminal_row, terminal_col);
 }
 
+void kbackspace(void) {
+    if (0 == terminal_col && 0 == terminal_row) {
+        return;
+    }
+
+    if (terminal_col == 0) {
+        terminal_row -= 1;
+        terminal_col = MAX_COLS - 2;
+    }
+    else {
+        --terminal_col;
+    }
+
+    const uint16_t index = terminal_row * MAX_COLS + terminal_col;
+    terminal[index] = vga_entry(' ', VGA_COLOR_WHITE);
+    set_cursor_position(terminal_row, terminal_col);
+}
+
 void writec(char c) {
     const uint16_t index = terminal_row * MAX_COLS + terminal_col;
     terminal[index] = vga_entry(c, VGA_COLOR_WHITE);
