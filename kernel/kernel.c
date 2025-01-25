@@ -25,5 +25,16 @@ void kmain(void) {
     clear_terminal();
     kprint("Welcome!\n");
 
+    char line[256] = { 0 };
+    while(0 != strcmp("END", line)) {
+        kprint("< ");
+        kb_getline(line);
+        if (strcmp("END", line)) {
+            kprint("lmfao.. I wish :(\n");
+        }
+    }
+
+    kprint("Goodbye, love you boo.");
+
     while(1);
 }

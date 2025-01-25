@@ -5,6 +5,7 @@
 #include <arch/x86/8259/pic.h>
 #include <kernel/hid/kbd.h>
 #include <kernel/vga.h>
+#include <libc/mem.h>
 
 #define KB_BUFFER_MAX 256
 #define UPPERCASE_MASK 0x80
@@ -12,12 +13,13 @@
 #define RIGHT_SHIFT 0x2A
 #define BACKSPACE 0x0E
 #define CAPS_LOCK 0x3A
+#define ENTER 0x1C
 
 static char __kb_buf[KB_BUFFER_MAX] = { 0 };
 uint8_t __kb_idx = 0;
 
-/* Currently support scan set 1 - TODO: switch? */
-const char sc_ascii[] = { 
+// currently support scan set 1 - TODO: switch?
+const char __sc_ascii[] = { 
     '?', '?', '1', '2', '3', '4', '5', '6',     
     '7', '8', '9', '0', '-', '=', '?', '?', 'Q', 'W', 'E', 'R', 'T', 'Y', 
     'U', 'I', 'O', 'P', '[', ']', '?', '?', 'A', 'S', 'D', 'F', 'G', 
@@ -28,6 +30,7 @@ const char sc_ascii[] = {
 // TODO: other mod keys.
 bool __shift_down = false;
 bool __caps_lock = false;
+bool __enter_pressed = false;
 
 void __kbwrite(char letter) {
     if (__kb_idx == KB_BUFFER_MAX) {
@@ -95,10 +98,15 @@ void __keydown(uint8_t scancode) {
         __kbbackspace();
         kbackspace();
         break;
+
+    case ENTER:
+        __enter_pressed = true;
+        newline();
+        break;
     
     // Add more as needed.
     default:
-        __handle_character(sc_ascii[scancode]);
+        __handle_character(__sc_ascii[scancode]);
         break;
     }
 }
@@ -114,6 +122,14 @@ void __process_keyscan(uint8_t scancode) {
 
 void __ps2_kb_irq_handler(irq_frame_t* frame) {
     __process_keyscan(inb(0x60));
+}
+
+void kb_getline(char* input) {
+    // hold while we do not get enter.
+    while (!__enter_pressed); 
+    memcpy(__kb_buf, input, __kb_idx ? __kb_idx + 1 : 0);
+    __enter_pressed = false;
+    __kb_idx = 0;
 }
 
 void init_ps2_kb(void) {
