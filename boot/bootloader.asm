@@ -3,11 +3,13 @@
 ; our base address.
 [org 0x7c00]
 
-; set our kernel to 0x10000 address.
-; note the value here is 0x1000, but it is shifted by four
-; due to the fact we use it in ES:BX.
-KERNEL_SEGMENT_VALUE equ 0x1000
-KERNEL_START equ 0x10000
+; set our kernel to 0x100000 address.
+; note the value here is 0xFFFF, but it is shifted by four
+; due to the fact we use it in ES:BX. Afterwards, we add bx to it, 
+; which is 0x10, and get 0x100000:
+; 0xFFFF0 + 0x10 = 0x100000
+KERNEL_SEGMENT_VALUE equ 0xFFFF
+KERNEL_START equ 0x100000
 
 start:
     mov [BOOT_DRIVE], dl ; save the boot drive if need be.
@@ -41,10 +43,10 @@ load_kernel:
 
     push es ; save the last value.
     ; This is a simple trick to really load our kernel at
-    ; 0x10000 using segmentation.
+    ; 0x100000 using segmentation.
     mov cx, KERNEL_SEGMENT_VALUE
     mov es, cx
-    mov bx, 0
+    mov bx, 0x10
     ; the number of sectors to read.
     ; each sector is 512 bytes.
     ; 20h * 512 = 16KB of Kernel Code.

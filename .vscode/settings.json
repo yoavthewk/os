@@ -5,6 +5,7 @@
         "stdint.h": "c",
         "comm.h": "c",
         "idt.h": "c",
-        "isr.h": "c"
+        "isr.h": "c",
+        "pmm.h": "c"
     }
 }

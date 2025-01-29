@@ -2,7 +2,8 @@ OUTPUT_FORMAT(elf32-i386)
 ENTRY(_start)
 SECTIONS
 {
-    . = 0x10000;
+    . = 0x100000;
+    kernel_start = .;
     .text BLOCK(4K) : ALIGN(4K) {
         code = .;
         *(.text, .text.*)
@@ -26,7 +27,7 @@ SECTIONS
         *(.bss, .bss.*)
         . = ALIGN(4096);
     }
-    end = .;
+    kernel_end = .;
     /DISCARD/ :
     {
         *(.comment)

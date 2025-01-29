@@ -1,7 +1,7 @@
 BUILD=build
 CPU=cpu
 BOOT=boot
-C_SOURCES = $(wildcard kernel/*.c cpu/*.c drivers/*.c libc/*/*.c io/*/*.c io/*/*/*.c)
+C_SOURCES = $(wildcard kernel/*.c kernel/*/*.c cpu/*.c drivers/*.c libc/*/*.c io/*/*.c io/*/*/*.c)
 ASM_SOURCES = $(wildcard cpu/*.asm)
 HEADERS = $(wildcard kernel/*.h cpu/*.h drivers/*.h libc/*/*.h)
 OBJ = $(patsubst %.c, $(BUILD)/%.o, $(notdir $(C_SOURCES))) \
@@ -12,7 +12,7 @@ GDB = /bin/gdb
 CFLAGS = -g -m32 -ffreestanding -Iinclude
 
 # So make knows where to look for .c files.
-vpath %.c kernel drivers cpu libc libc/string libc/memory io/8259 io/hid/ps2
+vpath %.c kernel kernel/memory drivers cpu libc libc/string libc/memory io/8259 io/hid/ps2
 vpath %.asm cpu
 
 run: $(BUILD)/os.bin
