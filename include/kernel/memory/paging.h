@@ -2,12 +2,15 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define KERNEL_START (1 << 20)
-#define KERNEL_VIRT_START 0xC0000000
+#define KERNEL_START 0
+#define VIRT_START 0xC0000000
+#define KERNEL_VIRT_START 0xC0100000
 
 #define PAGE_SHIFT 12
 // 4KiB.
 #define PAGE_SIZE (1 << PAGE_SHIFT)
+#define MB_SHIFT 20
+#define MB (1 << MB_SHIFT)
 #define NUMBER_OF_PAGES 1024
 #define NUMBER_OF_PAGE_TABLES 1024
 

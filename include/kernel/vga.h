@@ -34,7 +34,7 @@ enum vga_color {
 /* VGA Constants. */
 #define MAX_COLS 80
 #define MAX_ROWS 25
-#define TERMINAL_MEMORY 0xB8000
+#define TERMINAL_MEMORY 0x000B8000 // Identity-mapped.
 
 /* Offset Macros. */
 #define GET_POSITION(row, col) ((row * MAX_COLS) + col)

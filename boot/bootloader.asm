@@ -51,7 +51,7 @@ load_kernel:
     ; each sector is 512 bytes.
     ; 20h * 512 = 16KB of Kernel Code.
     ; might need to increment later on.
-    mov dh, 0x20
+    mov dh, 0x50
     mov dl, [BOOT_DRIVE] ; if it somehow gets overriden.
     call disk_read
     pop es ; retrieve the last value. 

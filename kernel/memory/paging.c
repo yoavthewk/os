@@ -2,15 +2,17 @@
 #include <kernel/memory/pmm.h>
 #include <kernel/vga.h>
 
+#define V2P(addr) (((uint8_t*)addr - (uint8_t*)VIRT))
+
 extern _start, kernel_start, kernel_end;
-page_directory_t pd = { 0 };
+page_directory_t* pd;
 
 void __enable_paging(void) {
     __asm__ volatile ("movl %cr0, %eax; orl 0x80000001, %eax; movl %eax, %cr0");
 }
 
 void __set_pgd(page_directory_t* pd) {
-    __asm__ volatile ("movl %%edx, %%cr3; movl %%eax, %%cr3" :: "d"(pd));
+    __asm__ volatile ("movl %%edx, %%cr3" :: "d"(pd));
 }
 
 bool __ensure_page_alignment(uint32_t addr) {
@@ -63,34 +65,41 @@ void __print_paging_done(void) {
 
 void __map_kernel(void) {
     uint32_t kernel_size = get_closest_page((uint8_t*)&kernel_end - (uint8_t*)&kernel_start);
-    uint32_t kernel_pages = kernel_size / PAGE_SIZE;
-    for (uint32_t i = 0, frame = KERNEL_START, virt = KERNEL_VIRT_START; i < kernel_pages; 
+    uint32_t kernel_pages = (kernel_size + MB) / PAGE_SIZE;
+
+    for (uint32_t i = 0, frame = KERNEL_START, virt = VIRT_START; i < kernel_pages; 
                 ++i, frame += PAGE_SIZE, virt += PAGE_SIZE) {
-        __map_page(&pd, frame, virt, PTE_PRESENT | PTE_RW);
+        __map_page(pd, frame, virt, PTE_PRESENT | PTE_RW);
+    }
+}
+
+void __id_map(void) {
+    for (uint32_t i = 0, frame = 0, virt = 0; i < NUMBER_OF_PAGES; ++i ,frame += PAGE_SIZE, virt += PAGE_SIZE) {
+        __map_page(pd, frame, virt, PTE_PRESENT | PTE_RW);
     }
 }
 
 void init_vmm(void) {
+    pd = (page_directory_t*)kalloc_pg(1);
+
     // Initiate page directory to not present.
-    __init_pd(&pd);
+    __init_pd(pd);
 
     // Next, we'll need to map our first page table.
     // We'll want to identity map our first 4MiB of memory (a part of the kernel 
     // so the CPU can resolve the addresses).
-    for (uint32_t frame = 0, virt = 0; frame < KERNEL_START; frame += PAGE_SIZE, virt += PAGE_SIZE) {
-        __map_page(&pd, frame, virt, PTE_PRESENT | PTE_RW);
-    }
+    __id_map();
 
     // Now, we'll want to create a map for our kernel.
     // This is a higher half kernel, so let's map it to 3GB+ addresses.
     __map_kernel();
 
     // Enable paging and set the page directory.
-    __set_pgd(&pd);
-    __enable_paging();
+    __set_pgd(pd);
+    //__enable_paging();
 
     // The kernel should now be mapped to the 3GB+ addresses. 
     // Therefore, we'll need to jump there.
-    ((void (*)())(KERNEL_VIRT_START + 0x001a4))();
+    __print_paging_done();
 }
 

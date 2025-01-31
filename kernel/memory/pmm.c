@@ -1,7 +1,7 @@
 #include <kernel/memory/pmm.h>
 #include <kernel/vga.h>
 
-extern uint8_t kernel_end; // linker variable.
+extern uint8_t phys_kernel_end; // linker variable.
 
 // We want to insert our bmap right after the kernel and make 
 // it a reserved space.
@@ -9,7 +9,7 @@ extern uint8_t kernel_end; // linker variable.
 // therefore, 4KiB of entries mean an allocation of above a GB.
 // Let's give it that for now. 
 // @note: kernel end should be aligned to PAGE_SIZE (peek at linker.ld if you don't understand).
-uint8_t* __kernel_end = (uint8_t*)&kernel_end;
+uint8_t* __kernel_end = (uint8_t*)&phys_kernel_end;
 uint8_t* __start_pg;
 uint8_t* __bmap;
 

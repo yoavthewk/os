@@ -23,8 +23,8 @@ $(BUILD)/os.bin: $(BUILD)/bootloader.bin $(BUILD)/kernel.bin
 	cat $^ > $(BUILD)/os.bin
 
 debug: $(BUILD)/os.bin $(BUILD)/kernel.elf
-	qemu-system-i386 -s -fda $< -d guest_errors,int &
-	${GDB} -ex "symbol-file $(BUILD)/kernel.elf" -ex "target remote localhost:1234" -ex "b itoa"
+	qemu-system-i386 -s -S -fda $< -d guest_errors,int -no-reboot &
+	${GDB} -ex "symbol-file $(BUILD)/kernel.elf" -ex "target remote localhost:1234" -ex "b *0x100000"
 
 $(BUILD)/kernel.bin: $(BUILD)/kernel.elf
 	objcopy -O binary $< $@
