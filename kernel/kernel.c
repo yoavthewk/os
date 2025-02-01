@@ -25,22 +25,23 @@ void kmain(void) {
     init_ps2_kb();  
 
     clear_terminal();
+
+    kprint("[kmain] INITIALIZING PMM...\n");
+    init_pmm();
+    kprint("[kmain] DONE\n");
+    kprint("[kmain] INITIALIZING VMM...\n");
+    init_vmm();
+    kprint("[kmain] DONE\n");
     kprint("Welcome!\n");
 
-    // char line[256] = { 0 };
-    // while(0 != strcmp("END", line)) {
-    //     kprint("< ");
-    //     kb_getline(line);
-    //     if (strcmp("END", line)) {
-    //         kprint("lmfao.. I wish :(\n");
-    //     }
-    // }
-
-    //kprint("[INITIALIZING PAGING...]\n");
-    //init_vmm();
-    init_pmm();
-    const uint8_t* pg = kalloc_pg(1);
-    init_vmm();
+    char line[256] = { 0 };
+    while(0 != strcmp("END", line)) {
+        kprint("< ");
+        kb_getline(line);
+        if (strcmp("END", line)) {
+            kprint("lmfao.. I wish :(\n");
+        }
+    }
 
     while(1);
 }

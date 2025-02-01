@@ -17,7 +17,7 @@ void init_pmm(void);
 
 void* kalloc_pg(const uint32_t num);
 
-void free_pg(void* pg);
+void kfree_pg(void* pg);
 
 uint8_t* get_closest_page(void* addr);
 

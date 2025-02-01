@@ -6,6 +6,7 @@
 
 extern _start, kernel_start, kernel_end;
 page_directory_t* pd;
+page_directory_t* kpgdir = (page_directory_t*)PD_ADDRESS;
 
 void __enable_paging(void) {
     __asm__ volatile ("movl %cr0, %eax; orl 0x80000001, %eax; movl %eax, %cr0");
@@ -79,6 +80,14 @@ void __id_map(void) {
     }
 }
 
+void __recursive_pgdt(void) {
+    pd->page_tables[1023] = GET_FRAME((uint32_t)pd) | PDE_RW | PDE_PRESENT; 
+}
+
+page_table_t* __get_pt(uint32_t virt) {
+    return (page_table_t*)(PT_ADDRESS + (PDINDEX(virt) * PAGE_SIZE));
+}
+
 void init_vmm(void) {
     pd = (page_directory_t*)kalloc_pg(1);
 
@@ -94,12 +103,62 @@ void init_vmm(void) {
     // This is a higher half kernel, so let's map it to 3GB+ addresses.
     __map_kernel();
 
-    // Enable paging and set the page directory.
-    __set_pgd(pd);
-    //__enable_paging();
+    // Seeing as we'll now be in paging mode,
+    // we need a way to access the physical addresses of our
+    // page tables. For that, we'll map PDE[1023] to &PD.
+    // refer to [http://www.rohitab.com/discuss/topic/31139-tutorial-paging-memory-mapping-with-a-recursive-page-directory/]
+    // for a really good explanation.
+    __recursive_pgdt();
 
-    // The kernel should now be mapped to the 3GB+ addresses. 
-    // Therefore, we'll need to jump there.
-    __print_paging_done();
+    // Switch the page directory - paging is already enabled from boot.
+    __set_pgd(pd);
 }
 
+int8_t vmm_map(uint32_t frame, uint32_t virt) {
+    if (!__ensure_page_alignment(virt) || !__ensure_page_alignment(frame)) {
+        return -1;
+    }
+
+    page_table_t* pt = __get_pt(virt);
+
+    if (kpgdir->page_tables[PDINDEX(virt)] & PDE_PRESENT) {
+        if (pt->pages[PTINDEX(virt)] & PTE_PRESENT) {
+            // already mapped.
+            return -1;
+        }
+    }
+    else {
+        page_table_t* new_pt = kalloc_pg(1);
+        kpgdir->page_tables[PDINDEX(virt)] = GET_FRAME((uint32_t)new_pt) | PDE_PRESENT | PDE_RW;
+    }
+
+    pt->pages[PTINDEX(virt)] = GET_FRAME(virt) | PTE_PRESENT | PTE_RW;
+    return 0;
+}
+
+int8_t vmm_unmap(uint32_t virt) {
+    if (!__ensure_page_alignment(virt)) {
+        return -1;
+    }
+
+    if (!kpgdir->page_tables[PDINDEX(virt)] & PDE_PRESENT) {
+        return -1;
+    }   
+
+    page_table_t* pt = __get_pt(virt);
+    if (!pt->pages[PTINDEX(virt)] & PTE_PRESENT) {
+        return -1;
+    }
+
+    pt->pages[PTINDEX(virt)] = PTE_RW;
+
+    // check if the page table needs to stay mapped.
+    uint32_t free_pgs = 0;
+    for (uint32_t free_pgs = 0; (free_pgs < NUMBER_OF_PAGES) && (!pt->pages[free_pgs] & PTE_PRESENT); ++free_pgs);
+    if (NUMBER_OF_PAGES == free_pgs) {
+        kfree_pg(GET_FRAME(kpgdir->page_tables[PDINDEX(virt)]));
+        kpgdir->page_tables[PDINDEX(virt)] = PDE_RW;
+    }
+
+    return 0;
+}

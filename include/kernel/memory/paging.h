@@ -19,6 +19,10 @@
 #define GET_FRAME(addr) (addr & 0xFFFFF000)
 #define SET_FRAME(entry, addr) (*entry = (*entry & ~0xFFFFF000) | addr)
 
+// Recursive-paging.
+#define PD_ADDRESS 0xFFFFF000
+#define PT_ADDRESS 0xFFC00000
+
 typedef uint32_t pd_entry_t; 
 typedef uint32_t pt_entry_t;
 

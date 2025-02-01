@@ -82,7 +82,7 @@ void* kalloc_pg(const uint32_t num) {
     return NULL;
 }
 
-void free_pg(void* pg) {
+void kfree_pg(void* pg) {
     __free_region(GET_PG_INDEX(pg));
 }
 
