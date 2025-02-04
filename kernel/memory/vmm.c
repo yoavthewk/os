@@ -1,4 +1,4 @@
-#include <kernel/memory/paging.h>
+#include <kernel/memory/vmm.h>
 #include <kernel/memory/pmm.h>
 #include <kernel/vga.h>
 
@@ -84,8 +84,52 @@ void __recursive_pgdt(void) {
     pd->page_tables[1023] = GET_FRAME((uint32_t)pd) | PDE_RW | PDE_PRESENT; 
 }
 
+bool __pt_present(uint32_t virt) {
+    return kpgdir->page_tables[PDINDEX(virt)] & PDE_PRESENT;
+}
+
 page_table_t* __get_pt(uint32_t virt) {
     return (page_table_t*)(PT_ADDRESS + (PDINDEX(virt) * PAGE_SIZE));
+}
+
+bool __is_page_mapped(uint32_t virt) {
+    return __get_pt(virt)->pages[PTINDEX(virt)] & PTE_PRESENT;
+}
+
+void __init_pt(uint32_t virt) {
+    pd_entry_t* pde = &kpgdir->page_tables[PDINDEX(virt)];
+    page_table_t* pte = (page_table_t*)kalloc_pg(1);
+    __set_frame(pde, pte);
+    *pde |= PDE_PRESENT | PDE_RW;
+}
+
+void* __get_next_available(mm_zone_t* zone, uint32_t pgnum) {
+    uint32_t free_pages = 0;
+    void* virt_base = NULL;
+    page_table_t* pt = NULL;
+
+    for (uint32_t virt = zone->base; virt < zone->limit; virt += PAGE_SIZE) {
+        if (!__pt_present(virt)) {
+            // TODO: free if not used?
+            __init_pt(virt);
+        }
+
+        if (__is_page_mapped(virt)) {
+            free_pages = 0;
+            continue;
+        }
+
+        if (0 == free_pages) {
+            virt_base = (void*)virt;
+        }
+        ++free_pages;
+
+        if (pgnum == free_pages) {
+            return virt_base;
+        }
+    }
+
+    return NULL;
 }
 
 void init_vmm(void) {
@@ -132,7 +176,7 @@ int8_t vmm_map(uint32_t frame, uint32_t virt) {
         kpgdir->page_tables[PDINDEX(virt)] = GET_FRAME((uint32_t)new_pt) | PDE_PRESENT | PDE_RW;
     }
 
-    pt->pages[PTINDEX(virt)] = GET_FRAME(virt) | PTE_PRESENT | PTE_RW;
+    pt->pages[PTINDEX(virt)] = GET_FRAME(frame) | PTE_PRESENT | PTE_RW;
     return 0;
 }
 
@@ -141,12 +185,12 @@ int8_t vmm_unmap(uint32_t virt) {
         return -1;
     }
 
-    if (!kpgdir->page_tables[PDINDEX(virt)] & PDE_PRESENT) {
+    if (!(kpgdir->page_tables[PDINDEX(virt)] & PDE_PRESENT)) {
         return -1;
     }   
 
     page_table_t* pt = __get_pt(virt);
-    if (!pt->pages[PTINDEX(virt)] & PTE_PRESENT) {
+    if (!(pt->pages[PTINDEX(virt)] & PTE_PRESENT)) {
         return -1;
     }
 
@@ -161,4 +205,27 @@ int8_t vmm_unmap(uint32_t virt) {
     }
 
     return 0;
+}
+
+// FIXME: very kernel focused, doubt this'll hold up in userspace.
+//        improve when possible.
+void* mm_mmap(mm_zone_t* zone, uint32_t pgnum) {
+    void* virt_address = __get_next_available(zone, pgnum);
+    if (NULL == virt_address) {
+        return NULL;
+    }
+
+    void* phys_address = kalloc_pg(pgnum);
+    if (NULL == phys_address) {
+        return NULL;
+    }
+
+    for (uint32_t i = 0, frame = (uint32_t)phys_address, virt = (uint32_t)virt_address; 
+            i < pgnum; ++i, frame += PAGE_SIZE, virt += PAGE_SIZE) {
+        if (0 != vmm_map(frame, virt)) {
+            return NULL;
+        }
+    }
+
+    return virt_address;
 }

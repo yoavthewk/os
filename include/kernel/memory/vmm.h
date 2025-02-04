@@ -61,4 +61,15 @@ typedef struct {
     pd_entry_t page_tables[NUMBER_OF_PAGE_TABLES];
 } __attribute__((aligned(PAGE_SIZE))) page_directory_t;
 
+typedef struct {
+    uint32_t base;
+    uint32_t limit;
+} mm_zone_t;
+
 void init_vmm(void);
+
+int8_t vmm_map(uint32_t frame, uint32_t virt);
+
+int8_t vmm_unmap(uint32_t virt);
+
+void* mm_mmap(mm_zone_t* zone, uint32_t pgnum);

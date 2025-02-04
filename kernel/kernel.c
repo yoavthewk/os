@@ -4,8 +4,9 @@
 #include <libc/string.h>
 #include <arch/x86/cpu/idt.h>
 #include <arch/x86/8259/pic.h>
-#include <kernel/memory/paging.h>
+#include <kernel/memory/vmm.h>
 #include <kernel/memory/pmm.h>
+#include <kernel/memory/kmm.h>
 
 #if defined(__linux__)
 #error "This was not compiled using a cross-compiler."
@@ -28,13 +29,16 @@ void kmain(void) {
 
     kprint("[kmain] INITIALIZING PMM...\n");
     init_pmm();
-    kprint("[kmain] DONE\n");
+    kprint("[kmain] DONE INITIALIZING PMM...\n");
     kprint("[kmain] INITIALIZING VMM...\n");
     init_vmm();
-    kprint("[kmain] DONE\n");
+    kprint("[kmain] DONE INITIALIZING VMM...\n");
+    kprint("[kmain] INITIALIZING KHEAP...\n");
+    init_kmm();
+    kprint("[kmain] DONE INITIALIZING HEAP...\n");
     kprint("Welcome!\n");
 
-    char line[256] = { 0 };
+    char* line = (char*)kmalloc(256);
     while(0 != strcmp("END", line)) {
         kprint("< ");
         kb_getline(line);
