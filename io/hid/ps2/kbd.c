@@ -27,6 +27,14 @@ const char __sc_ascii[] = {
     'B', 'N', 'M', ',', '.', '/', '?', '?', '?', ' '
 };
 
+const char __sc_sascii[] = {
+    'n', 'n', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
+    '_', '+', 'n', 'n', 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
+    'O', 'P', '{', '}', 'n', 'n', 'A', 'S', 'D', 'F', 'G', 'H',
+    'J', 'K', 'L', ':', '\"', '~', 'n', '|', 'Z', 'X', 'C', 'V',
+    'B', 'N', 'M', '<', '>', '?', 'n', 'n', 'n', ' '
+};
+
 // TODO: other mod keys.
 bool __shift_down = false;
 bool __caps_lock = false;
@@ -53,7 +61,7 @@ bool __is_letter(char sc_ascii) {
     return is_lowercase | is_uppercase;
 }
 
-void __handle_character(char sc_ascii) {
+void __handle_character(char sc_ascii, uint8_t scancode) {
     uint8_t is_uppercase = (uint8_t)__shift_down ^ (uint8_t)__caps_lock; 
 
     if (__is_letter(sc_ascii)) {
@@ -62,6 +70,14 @@ void __handle_character(char sc_ascii) {
         kputc(letter);
     }
     else {
+        if (__shift_down) {
+            sc_ascii = __sc_sascii[scancode];
+        }
+
+        if ((__shift_down && 'n' == sc_ascii) || (!__shift_down && '?' == sc_ascii)) {
+            return;
+        }
+
         kputc(sc_ascii);
     }
 }
@@ -106,7 +122,7 @@ void __keydown(uint8_t scancode) {
     
     // Add more as needed.
     default:
-        __handle_character(__sc_ascii[scancode]);
+        __handle_character(__sc_ascii[scancode], scancode);
         break;
     }
 }
