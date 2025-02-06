@@ -33,7 +33,7 @@ hang:
     jmp $
 
 %include "boot/disk.asm"
-%include "boot/gdt.asm"
+%include "boot/gdt_table.asm"
 %include "boot/print.asm"
 
 [bits 16]

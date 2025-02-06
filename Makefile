@@ -3,7 +3,7 @@ CPU=cpu
 BOOT=boot
 C_SOURCES = $(wildcard kernel/*.c kernel/*/*.c cpu/*.c drivers/*.c libc/*/*.c io/*/*.c io/*/*/*.c)
 ASM_SOURCES = $(wildcard cpu/*.asm)
-HEADERS = $(wildcard kernel/*.h cpu/*.h drivers/*.h libc/*/*.h)
+HEADERS = $(wildcard kernel/*.h arch/x86/cpu/*.h drivers/*.h libc/*/*.h)
 OBJ = $(patsubst %.c, $(BUILD)/%.o, $(notdir $(C_SOURCES))) \
       $(patsubst %.asm, $(BUILD)/%.o, $(notdir $(ASM_SOURCES)))
 
