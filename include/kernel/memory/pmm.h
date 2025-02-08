@@ -21,3 +21,5 @@ void kfree_pg(void* pg);
 
 uint8_t* get_closest_page(void* addr);
 
+uint8_t* get_closest_page_down(void* addr);
+

@@ -2,7 +2,8 @@
     A driver for VGA screen output.
  */
 
- #include <stdint.h>
+#include <stdint.h>
+#include <stdarg.h>
 
 enum vga_color {
 	VGA_COLOR_BLACK = 0,
@@ -43,9 +44,12 @@ void clear_terminal(void);
 void kbackspace(void);
 void writec(char c);
 void kprint(char* str);
+void kprintln(char* str);
 void newline(void);
 void kputc(char c);
 void set_cursor_position(uint8_t row, uint8_t col);
+void kprintfln(const char* fmt, ...);
+void kprintf(const char* fmt, ...);
 
 uint16_t vga_entry(char c, uint8_t color);
 uint8_t vga_color_entry(enum vga_color fg, enum vga_color bg);

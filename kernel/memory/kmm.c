@@ -51,6 +51,7 @@ void* kmalloc(const uint32_t size) {
     }
 
     if (NULL == cur) {
+        // TODO: Allocate more memory here.
         return NULL;
     }
 
@@ -63,6 +64,7 @@ void* kmalloc(const uint32_t size) {
 }
 
 void kfree(const void* address) {
+    // TODO: merge?
     km_block_t* allocblk = (km_block_t*)((uint8_t*)address - sizeof(km_block_t));
     allocblk->free = true;
 }

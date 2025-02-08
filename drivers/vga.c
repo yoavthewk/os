@@ -1,6 +1,8 @@
 #include <kernel/vga.h>
-#include <arch/x86/cpu/comm.h>
+
 #include <libc/mem.h>
+#include <libc/string.h>
+#include <arch/x86/cpu/comm.h>
 
 volatile uint16_t* terminal = (uint16_t*)TERMINAL_MEMORY;
 
@@ -25,7 +27,7 @@ void set_cursor_position(uint8_t row, uint8_t col) {
 }
 
 /* Clear the whole terminal. */
-void clear_terminal() {
+void clear_terminal(void) {
     for (uint8_t x = 0; x < MAX_ROWS; ++x) {
         for (uint8_t y = 0; y < MAX_COLS; ++y) {
             const uint16_t index = x * MAX_COLS + y;
@@ -63,6 +65,13 @@ void kprint(char* str) {
     for (uint32_t index = 0; str[index] != 0; ++index) {
         kputc(str[index]);
     }
+}
+
+void kprintln(char* str) {
+    for (uint32_t index = 0; str[index] != 0; ++index) {
+        kputc(str[index]);
+    }
+    newline();
 }
 
 void newline(void) {
@@ -109,4 +118,55 @@ void kputc(char c) {
     }
 
     set_cursor_position(terminal_row, terminal_col);
+}
+
+void do_printf(const char* fmt, va_list args) {
+    char fmt_buf[MAX_FMT_BUF_LEN]; 
+
+    while(*fmt) {
+        if (*fmt == '%') {
+            ++fmt;
+            switch(*fmt) {
+                case 'd':
+                    itoa(va_arg(args, const int32_t), fmt_buf, 10);
+                    kprint(fmt_buf);
+                    break;
+                case 'x':
+                    itoa(va_arg(args, const int32_t), fmt_buf, 16);
+                    kprint("0x");
+                    kprint(fmt_buf);
+                    break;
+                case 's':
+                    kprint(va_arg(args, const char*));
+                    break;
+                case 'c':
+                    kputc(va_arg(args, const char));
+                    break;
+                default:
+                    // not a format specifier supported!
+                    kputc('%');
+                    kputc(*fmt);
+                    break;
+            }
+        }
+        else {
+            kputc(*fmt);
+        }
+        ++fmt;
+    }
+}
+
+void kprintfln(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    do_printf(fmt, args);
+    newline();
+    va_end(args);
+}
+
+void kprintf(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    do_printf(fmt, args);
+    va_end(args);
 }

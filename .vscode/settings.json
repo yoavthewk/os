@@ -8,6 +8,11 @@
         "isr.h": "c",
         "pmm.h": "c",
         "mem.h": "c",
-        "gdt.h": "c"
+        "gdt.h": "c",
+        "acpi.h": "c",
+        "common.h": "c",
+        "assert.h": "c",
+        "madt.h": "c",
+        "timer.h": "c"
     }
 }

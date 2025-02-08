@@ -1,12 +1,14 @@
 #include <stdint.h>
 #include <kernel/vga.h>
-#include <kernel/hid/kbd.h>
+#include <kernel/io/hid/kbd.h>
+#include <kernel/io/timer/timer.h>
 #include <libc/string.h>
 #include <arch/x86/cpu/idt.h>
 #include <arch/x86/8259/pic.h>
 #include <kernel/memory/vmm.h>
 #include <kernel/memory/pmm.h>
 #include <kernel/memory/kmm.h>
+#include <kernel/acpi/acpi.h>
 
 #if defined(__linux__)
 #error "This was not compiled using a cross-compiler."
@@ -24,6 +26,7 @@ void __interrupts_init(void) {
 void kmain(void) {
     __interrupts_init();
     init_ps2_kb();  
+    init_pit();
 
     clear_terminal();
 

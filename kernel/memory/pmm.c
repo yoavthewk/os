@@ -21,6 +21,10 @@ uint8_t* get_closest_page(void* addr) {
     return (((uintptr_t)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
 }
 
+uint8_t* get_closest_page_down(void* addr) {
+    return (((uintptr_t)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1)) - PAGE_SIZE;
+}
+
 void __null_out_bmap(void) {
     for (uint32_t i = 0; i < TOTAL_PAGES; ++i) {
         __bmap[i] = FREE;
