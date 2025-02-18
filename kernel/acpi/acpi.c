@@ -89,7 +89,7 @@ void __parse_table(const char* sig, parse_fn_t parse) {
     }
 
     kprintfln("Could not find requested APIC table... Panicing...");
-    kpanic();
+    // panic? :)
 }
 
 void parse_acpi(void) {

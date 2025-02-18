@@ -26,7 +26,6 @@ void __interrupts_init(void) {
 void kmain(void) {
     __interrupts_init();
     init_ps2_kb();  
-    init_pit();
 
     clear_terminal();
 
@@ -40,6 +39,8 @@ void kmain(void) {
     init_kmm();
     kprint("[kmain] DONE INITIALIZING HEAP...\n");
     kprint("Welcome!\n");
+    init_scheduler();
+    init_pit();
 
     char* line = (char*)kmalloc(256);
     while(0 != strcmp("END", line)) {

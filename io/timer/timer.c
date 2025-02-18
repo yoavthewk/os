@@ -1,4 +1,5 @@
 #include <kernel/io/timer/timer.h>
+#include <kernel/process/scheduler.h>
 #include <arch/x86/8259/pic.h>
 #include <arch/x86/cpu/idt.h>
 #include <kernel/vga.h>
@@ -13,10 +14,10 @@ void timer_phase(const uint32_t hz) {
     outb(PIT_DATA_0, ((divisor >> 8) & 0xFF));
 }
 
-void __handle_tick(void) {
+void __handle_tick(irq_frame_t* frame) {
     ++tticks;
-    kprintfln("tick: %d", tticks);
-    // schedule here.
+    //kprintfln("tick: %d", tticks);
+    schedule(frame);
 }
 
 void init_pit(void) {

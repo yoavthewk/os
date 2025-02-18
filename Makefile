@@ -12,7 +12,7 @@ GDB = /bin/gdb
 CFLAGS = -g -m32 -ffreestanding -Iinclude
 
 # So make knows where to look for .c files.
-vpath %.c kernel kernel/memory kernel/acpi drivers cpu libc libc/string libc/memory io/8259 io/timer io/hid/ps2
+vpath %.c kernel kernel/memory kernel/acpi kernel/process drivers cpu libc libc/string libc/memory io/8259 io/timer io/hid/ps2
 vpath %.asm cpu
 
 run: $(BUILD)/os.bin

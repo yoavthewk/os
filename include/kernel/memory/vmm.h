@@ -5,6 +5,7 @@
 #define KERNEL_START 0
 #define VIRT_START 0xC0000000
 #define KERNEL_VIRT_START 0xC0100000
+#define KERNEL_VIRT_END 0xFFFFFFFF
 
 #define PAGE_SHIFT 12
 // 4KiB.
@@ -73,3 +74,9 @@ int8_t vmm_map(uint32_t frame, uint32_t virt);
 int8_t vmm_unmap(uint32_t virt);
 
 void* mm_mmap(mm_zone_t* zone, uint32_t pgnum);
+
+page_directory_t* vmm_create(void);
+
+page_directory_t* get_pgd(void);
+
+void set_pgd(page_directory_t*);

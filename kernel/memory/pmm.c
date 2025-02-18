@@ -5,7 +5,7 @@ extern uint8_t phys_kernel_end; // linker variable.
 
 // We want to insert our bmap right after the kernel and make 
 // it a reserved space.
-// Each bit in the bmap allocates a page (for now);
+// Each bit(byte) in the bmap allocates a page (for now);
 // therefore, 4KiB of entries mean an allocation of above a GB.
 // Let's give it that for now. 
 // @note: kernel end should be aligned to PAGE_SIZE (peek at linker.ld if you don't understand).

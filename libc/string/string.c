@@ -61,3 +61,9 @@ uint8_t strcmp(char* first, char* second) {
 
     return 0;
 }
+
+void strcpy(char* src, char* dst) {
+    for (uint32_t index = 0; src[index] != 0; ++index) {
+        dst[index] = src[index];
+    }
+}
