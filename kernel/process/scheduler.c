@@ -1,8 +1,17 @@
 #include <kernel/memory/kmm.h>
 #include <kernel/process/scheduler.h>
 #include <kernel/process/process.h>
+#include <kernel/vga.h>
 
 void __idle(void) {
+    kprintln("In first process!");
+    while (true) {
+        asm ("hlt");
+    }
+}
+
+void __idle2(void) {
+    kprintln("In second process!");
     while (true) {
         asm ("hlt");
     }
@@ -56,8 +65,12 @@ proc_t* __schedule_rr() {
 void __context_switch(proc_t* proc, irq_frame_t* frame) {
     irq_frame_t context = proc->context;
 
-    current_proc->status = READY;
-    current_proc->context = *frame; 
+    // this might be a takeoff from kernel,
+    // in which case we do not want to preserve stack.
+    if (RUNNING == current_proc->status){
+        current_proc->status = READY;
+        current_proc->context = *frame; 
+    }
 
     proc->status = RUNNING;
     *frame = context;
@@ -75,9 +88,11 @@ uint32_t scheduler_gen_pid(void) {
 void schedule(irq_frame_t* frame) {
     proc_t* next_proc = __schedule_rr();
     __context_switch(next_proc, frame);
+    current_proc = next_proc;
 }
 
 void init_scheduler(void) {
     // create the idle proc.
     proc_list = create_proc(NULL, "init", (uint32_t)__idle);
+    add_proc(create_proc(proc_list, "joebiden", (uint32_t)__idle2));
 }

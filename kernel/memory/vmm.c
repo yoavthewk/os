@@ -1,5 +1,6 @@
 #include <kernel/memory/vmm.h>
 #include <kernel/memory/pmm.h>
+#include <kernel/common.h>
 #include <kernel/vga.h>
 
 #define V2P(addr) (((uint8_t*)addr - (uint8_t*)VIRT))
@@ -7,6 +8,10 @@
 extern _start, kernel_start, kernel_end;
 page_directory_t* pd;
 page_directory_t* kpgdir = (page_directory_t*)PD_ADDRESS;
+mm_zone_t kzone = {
+    .base = KERNEL_VIRT_START,
+    .limit = KERNEL_VIRT_END
+};
 
 void __enable_paging(void) {
     __asm__ volatile ("movl %cr0, %eax; orl 0x80000001, %eax; movl %eax, %cr0");
@@ -54,6 +59,10 @@ bool __map_page(page_directory_t* pd, uint32_t frame, uint32_t virt, uint32_t at
     else {
         // allocate a page table.
         pte = (page_table_t*)kalloc_pg(1);
+        if (NULL == pte) {
+            kprintfln("Cannot allocate page table for %x... Panicing...", virt);
+            kpanic();
+        }
         __set_frame(pde, pte);
     }
 
@@ -115,6 +124,10 @@ void __id_map(page_directory_t* pgdir) {
     }
 }
 
+void __virt_recursive_pgdt(page_directory_t* pgdir, void* phys_pgdir) {
+    pgdir->page_tables[1023] = GET_FRAME((uint32_t)phys_pgdir) | PDE_RW | PDE_PRESENT; 
+}
+
 void __recursive_pgdt(page_directory_t* pgdir) {
     pgdir->page_tables[1023] = GET_FRAME((uint32_t)pgdir) | PDE_RW | PDE_PRESENT; 
 }
@@ -167,26 +180,31 @@ void* __get_next_available(mm_zone_t* zone, uint32_t pgnum) {
     return NULL;
 }
 
-page_directory_t* vmm_create(void) {
+page_directory_t* vm_create(void) {
     page_directory_t* pgdir = (page_directory_t*)kalloc_pg(1);
+    if (NULL == pgdir) {
+        return NULL;
+    }
+
+    page_directory_t* virt_pgdir = (page_directory_t*)mm_mmap_phys(&kzone, 1, (void*)pgdir);
+    if (NULL == virt_pgdir) {
+        return NULL;
+    }
 
     // Initiate page directory to not present.
-    __init_pd(pgdir);
+    __init_pd(virt_pgdir);
 
     // We'll want to identity map our first 4MiB of memory (a part of the kernel 
     // so the CPU can resolve the addresses).
-    __id_map(pgdir);
+    __id_map(virt_pgdir);
 
     // Now, we'll want to create a map for our kernel.
     // This is a higher half kernel, so let's map it to 3GB+ addresses.
-    __copy_kernel_mapping(pgdir);
+    __copy_kernel_mapping(virt_pgdir);
 
-    // Seeing as we'll now be in paging mode,
-    // we need a way to access the physical addresses of our
-    // page tables. For that, we'll map PDE[1023] to &PD.
-    // refer to [http://www.rohitab.com/discuss/topic/31139-tutorial-paging-memory-mapping-with-a-recursive-page-directory/]
-    // for a really good explanation.
-    __recursive_pgdt(pgdir);
+    // the recursive paging must not be copied, but replaced.
+    // that is due to a change in the physical address of the pgdir.
+    __virt_recursive_pgdt(virt_pgdir, pgdir);
 
     return pgdir;
 }
@@ -264,6 +282,22 @@ int8_t vmm_unmap(uint32_t virt) {
     }
 
     return 0;
+}
+
+void* mm_mmap_phys(mm_zone_t* zone, uint32_t pgnum, void* phys_address) {
+    void* virt_address = __get_next_available(zone, pgnum);
+    if (NULL == virt_address) {
+        return NULL;
+    }
+
+    for (uint32_t i = 0, frame = (uint32_t)phys_address, virt = (uint32_t)virt_address; 
+            i < pgnum; ++i, frame += PAGE_SIZE, virt += PAGE_SIZE) {
+        if (0 != vmm_map(frame, virt)) {
+            return NULL;
+        }
+    }
+
+    return virt_address;
 }
 
 // FIXME: very kernel focused, doubt this'll hold up in userspace.

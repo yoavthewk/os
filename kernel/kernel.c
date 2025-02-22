@@ -4,6 +4,7 @@
 #include <kernel/io/timer/timer.h>
 #include <libc/string.h>
 #include <arch/x86/cpu/idt.h>
+#include <arch/x86/cpu/gdt.h>
 #include <arch/x86/8259/pic.h>
 #include <kernel/memory/vmm.h>
 #include <kernel/memory/pmm.h>
@@ -38,6 +39,7 @@ void kmain(void) {
     kprint("[kmain] INITIALIZING KHEAP...\n");
     init_kmm();
     kprint("[kmain] DONE INITIALIZING HEAP...\n");
+    init_gdt();
     kprint("Welcome!\n");
     init_scheduler();
     init_pit();

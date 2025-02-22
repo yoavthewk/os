@@ -16,14 +16,7 @@ uint8_t* __bmap;
 #define GET_PG_INDEX(pg) (((uint8_t*)pg - __start_pg) / PAGE_SIZE)
 
 // TODO: turn into bitmap? or maybe something more sophisticated?
-
-uint8_t* get_closest_page(void* addr) {
-    return (((uintptr_t)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-}
-
-uint8_t* get_closest_page_down(void* addr) {
-    return (((uintptr_t)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1)) - PAGE_SIZE;
-}
+//       for this scope, this is okay, but refactor in a later project.
 
 void __null_out_bmap(void) {
     for (uint32_t i = 0; i < TOTAL_PAGES; ++i) {
@@ -62,6 +55,14 @@ void* __is_free_region(const uint32_t num, const uint32_t cur_pg) {
     // set as allocated in the bmap and return the address.
     __allocate_region(cur_pg, num);
     return __start_pg + PAGE_SIZE * cur_pg;
+}
+
+uint8_t* get_closest_page(void* addr) {
+    return (((uintptr_t)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
+}
+
+uint8_t* get_closest_page_down(void* addr) {
+    return (((uintptr_t)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1)) - PAGE_SIZE;
 }
 
 void init_pmm(void) {

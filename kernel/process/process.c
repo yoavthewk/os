@@ -28,7 +28,7 @@ static inline proc_t* __alloc_proc(proc_t* parent, char* name) {
     proc->context.cs = KERNEL_CS;
 
     // create a pagedir and change to it.
-    proc->pd = vmm_create();
+    proc->pd = vm_create();
 
     page_directory_t* cur_pgdir = get_pgd();
 
