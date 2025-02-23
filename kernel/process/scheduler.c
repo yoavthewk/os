@@ -63,7 +63,11 @@ proc_t* __schedule_rr() {
 }
 
 void __context_switch(proc_t* proc, irq_frame_t* frame) {
-    irq_frame_t context = proc->context;
+    // do not context switch when it is the same process.
+    // this introduces a heavy overload.
+    if (proc == current_proc) {
+        return;
+    }
 
     // this might be a takeoff from kernel,
     // in which case we do not want to preserve stack.
@@ -73,7 +77,7 @@ void __context_switch(proc_t* proc, irq_frame_t* frame) {
     }
 
     proc->status = RUNNING;
-    *frame = context;
+    *frame = proc->context;
     
     // switch pgdir.
     set_pgd(proc->pd);
