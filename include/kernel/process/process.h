@@ -21,11 +21,12 @@ typedef enum {
 typedef struct {
     proc_status_t status;
     uint32_t pid;
-    page_directory_t* pd;
+    procmem_t* mem;
     irq_frame_t context;
     struct proc_t* parent;
     struct proc_t* next;
     char name[TASK_NAME_MAX_LEN];
+    uint32_t stack;
 } proc_t;
 
 static mm_zone_t us_mm = {
@@ -38,3 +39,6 @@ extern proc_t* proc_list;
 
 proc_t* create_proc(proc_t* parent, char* name, uint32_t entry);
 void add_proc(proc_t* proc);
+proc_t* __get_back_proc(proc_t* proc);
+void remove_proc(proc_t* proc);
+

@@ -61,13 +61,13 @@ void writec(char c) {
     terminal[index] = vga_entry(c, VGA_COLOR_WHITE);
 }
 
-void kprint(char* str) {
+void kprint(const char* str) {
     for (uint32_t index = 0; str[index] != 0; ++index) {
         kputc(str[index]);
     }
 }
 
-void kprintln(char* str) {
+void kprintln(const char* str) {
     for (uint32_t index = 0; str[index] != 0; ++index) {
         kputc(str[index]);
     }

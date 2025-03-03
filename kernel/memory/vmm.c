@@ -1,5 +1,6 @@
 #include <kernel/memory/vmm.h>
 #include <kernel/memory/pmm.h>
+#include <kernel/memory/kmm.h>
 #include <kernel/common.h>
 #include <kernel/vga.h>
 
@@ -61,7 +62,7 @@ bool __map_page(page_directory_t* pd, uint32_t frame, uint32_t virt, uint32_t at
         pte = (page_table_t*)kalloc_pg(1);
         if (NULL == pte) {
             kprintfln("Cannot allocate page table for %x... Panicing...", virt);
-            kpanic();
+            kpanic("Sadge");
         }
         __set_frame(pde, pte);
     }
@@ -180,33 +181,34 @@ void* __get_next_available(mm_zone_t* zone, uint32_t pgnum) {
     return NULL;
 }
 
-page_directory_t* vm_create(void) {
-    page_directory_t* pgdir = (page_directory_t*)kalloc_pg(1);
-    if (NULL == pgdir) {
+procmem_t* vm_create(void) {
+    procmem_t* procmem = (procmem_t*)kmalloc(sizeof(procmem_t));
+    procmem->pgdir = (page_directory_t*)kalloc_pg(1);
+    if (NULL == procmem->pgdir) {
         return NULL;
     }
 
-    page_directory_t* virt_pgdir = (page_directory_t*)mm_mmap_phys(&kzone, 1, (void*)pgdir);
-    if (NULL == virt_pgdir) {
+    procmem->virt_pgdir = (page_directory_t*)mm_mmap_phys(&kzone, 1, (void*)procmem->pgdir);
+    if (NULL == procmem->virt_pgdir) {
         return NULL;
     }
 
     // Initiate page directory to not present.
-    __init_pd(virt_pgdir);
+    __init_pd(procmem->virt_pgdir);
 
     // We'll want to identity map our first 4MiB of memory (a part of the kernel 
     // so the CPU can resolve the addresses).
-    __id_map(virt_pgdir);
+    __id_map(procmem->virt_pgdir);
 
     // Now, we'll want to create a map for our kernel.
     // This is a higher half kernel, so let's map it to 3GB+ addresses.
-    __copy_kernel_mapping(virt_pgdir);
+    __copy_kernel_mapping(procmem->virt_pgdir);
 
     // the recursive paging must not be copied, but replaced.
     // that is due to a change in the physical address of the pgdir.
-    __virt_recursive_pgdt(virt_pgdir, pgdir);
+    __virt_recursive_pgdt(procmem->virt_pgdir, procmem->pgdir);
 
-    return pgdir;
+    return procmem;
 }
 
 void init_vmm(void) {

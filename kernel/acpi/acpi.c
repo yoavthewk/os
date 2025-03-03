@@ -5,6 +5,7 @@
 #include <kernel/acpi/madt.h>
 #include <kernel/vga.h>
 #include <libc/mem.h>
+#include <kernel/common.h>
 
 /*
     CURRENTLY UNUSED - 
@@ -88,8 +89,7 @@ void __parse_table(const char* sig, parse_fn_t parse) {
         }
     }
 
-    kprintfln("Could not find requested APIC table... Panicing...");
-    // panic? :)
+    kpanic("Could not find requested APIC table... Panicing...");
 }
 
 void parse_acpi(void) {

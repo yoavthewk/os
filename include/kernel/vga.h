@@ -43,8 +43,8 @@ enum vga_color {
 void clear_terminal(void);
 void kbackspace(void);
 void writec(char c);
-void kprint(char* str);
-void kprintln(char* str);
+void kprint(const char* str);
+void kprintln(const char* str);
 void newline(void);
 void kputc(char c);
 void set_cursor_position(uint8_t row, uint8_t col);

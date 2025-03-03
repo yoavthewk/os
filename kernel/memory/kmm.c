@@ -40,13 +40,11 @@ void* __allocate_block(km_block_t* blk) {
 void* __try_allocate(km_block_t* blk, const uint32_t size) {
     uint32_t pg_num = size / PAGE_SIZE + (size % PAGE_SIZE ? 1 : 0);
     if ((uint8_t*)blk + (pg_num * PAGE_SIZE) > kheap_zone.limit) {
-        kprintfln("Out-of-memory...");
-        kpanic();
+        kpanic("Out-of-memory...");
     }
 
     if (NULL == mm_mmap(&kheap_zone, pg_num)) {
-        kprintfln("mm_mmap failed...");
-        kpanic();
+        kpanic("mm_mmap failed...");
     }
 
     __set_block(blk, size + sizeof(km_block_t), true, NULL);

@@ -10,6 +10,7 @@
 #include <kernel/memory/pmm.h>
 #include <kernel/memory/kmm.h>
 #include <kernel/acpi/acpi.h>
+#include <kernel/process/scheduler.h>
 
 #if defined(__linux__)
 #error "This was not compiled using a cross-compiler."

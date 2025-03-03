@@ -5,30 +5,11 @@
 
 void __idle(void) {
     kprintln("In first process!");
-    while (true) {
-        asm ("hlt");
-    }
+    while(true);
 }
 
 void __idle2(void) {
     kprintln("In second process!");
-    while (true) {
-        asm ("hlt");
-    }
-}
-
-proc_t* __get_back_proc(proc_t* proc) {
-    proc_t* cur_proc = proc->next;
-    while (cur_proc->next != proc) {
-        cur_proc = NULL == proc->next ? proc_list : proc->next;
-    }
-    return cur_proc;
-}
-
-void __remove_proc(proc_t* proc) {
-    proc_t* back_proc = __get_back_proc(proc);
-    back_proc->next = proc->next;
-    kfree(proc);
 }
 
 proc_t* __schedule_rr() { 
@@ -43,7 +24,9 @@ proc_t* __schedule_rr() {
 
         switch (preemp_proc->status) {
             case DEAD:
-                __remove_proc(preemp_proc);
+                kprintfln("Removing process %s", preemp_proc->name);
+                remove_proc(preemp_proc);
+                break;
             case READY:
                 return preemp_proc;
             default:
@@ -80,7 +63,7 @@ void __context_switch(proc_t* proc, irq_frame_t* frame) {
     *frame = proc->context;
     
     // switch pgdir.
-    set_pgd(proc->pd);
+    set_pgd(proc->mem->pgdir);
 }
 
 uint32_t scheduler_gen_pid(void) {
@@ -98,5 +81,5 @@ void schedule(irq_frame_t* frame) {
 void init_scheduler(void) {
     // create the idle proc.
     proc_list = create_proc(NULL, "init", (uint32_t)__idle);
-    add_proc(create_proc(proc_list, "joebiden", (uint32_t)__idle2));
+    create_proc(proc_list, "joebiden", (uint32_t)__idle2);
 }

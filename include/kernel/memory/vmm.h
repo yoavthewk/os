@@ -67,6 +67,11 @@ typedef struct {
     uint32_t limit;
 } mm_zone_t;
 
+typedef struct {
+    page_directory_t* pgdir;
+    void* virt_pgdir;
+} procmem_t;
+
 void init_vmm(void);
 
 int8_t vmm_map(uint32_t frame, uint32_t virt);
@@ -77,7 +82,7 @@ void* mm_mmap(mm_zone_t* zone, uint32_t pgnum);
 
 void* mm_mmap_phys(mm_zone_t* zone, uint32_t pgnum, void* phys_address);
 
-page_directory_t* vm_create(void);
+procmem_t* vm_create(void);
 
 page_directory_t* get_pgd(void);
 
