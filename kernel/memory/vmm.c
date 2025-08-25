@@ -1,5 +1,7 @@
 #include <kernel/memory/vmm.h>
 #include <kernel/memory/pmm.h>
+#include <kernel/memory/kmm.h>
+#include <kernel/common.h>
 #include <kernel/vga.h>
 
 #define V2P(addr) (((uint8_t*)addr - (uint8_t*)VIRT))
@@ -7,13 +9,22 @@
 extern _start, kernel_start, kernel_end;
 page_directory_t* pd;
 page_directory_t* kpgdir = (page_directory_t*)PD_ADDRESS;
+mm_zone_t kzone = {
+    .base = KERNEL_VIRT_START,
+    .limit = KERNEL_VIRT_END
+};
 
 void __enable_paging(void) {
     __asm__ volatile ("movl %cr0, %eax; orl 0x80000001, %eax; movl %eax, %cr0");
 }
 
-void __set_pgd(page_directory_t* pd) {
+void set_pgd(page_directory_t* pgdir) {
+    pd = pgdir;
     __asm__ volatile ("movl %%edx, %%cr3" :: "d"(pd));
+}
+
+page_directory_t* get_pgd(void) {
+    return pd;
 }
 
 bool __ensure_page_alignment(uint32_t addr) {
@@ -44,11 +55,15 @@ bool __map_page(page_directory_t* pd, uint32_t frame, uint32_t virt, uint32_t at
     page_table_t* pte;
     pd_entry_t* pde = &pd->page_tables[PDINDEX(virt)];
     if (*pde & PDE_PRESENT) {
-        page_table_t* pte = (page_table_t*)GET_FRAME(*pde);
+        pte = (page_table_t*)GET_FRAME(*pde);
     } 
     else {
         // allocate a page table.
         pte = (page_table_t*)kalloc_pg(1);
+        if (NULL == pte) {
+            kprintfln("Cannot allocate page table for %x... Panicing...", virt);
+            kpanic("Sadge");
+        }
         __set_frame(pde, pte);
     }
 
@@ -64,24 +79,58 @@ void __print_paging_done(void) {
     while(1);
 }
 
-void __map_kernel(void) {
+void __ptalloc(page_directory_t* pgdir, uint32_t virt) {
+    page_table_t* pte;
+    pd_entry_t* pde = &pd->page_tables[PDINDEX(virt)];
+    if (*pde & PDE_PRESENT) {
+        pte = (page_table_t*)GET_FRAME(*pde);
+    } 
+    else {
+        // allocate a page table.
+        pte = (page_table_t*)kalloc_pg(1);
+        __set_frame(pde, pte);
+    }
+
+    *pde |= PDE_PRESENT | PDE_RW;
+}
+
+void __map_kernel_space(page_directory_t* pgdir) {
+    // Map all of the page tables of the kernel space, in order to ensure all of the 
+    // processes contain the same page tables; and thus, every kernellic change should
+    // occur everywhere simultaneously.
     uint32_t kernel_size = get_closest_page((uint8_t*)&kernel_end - (uint8_t*)&kernel_start);
     uint32_t kernel_pages = (kernel_size + MB) / PAGE_SIZE;
+    uint32_t virt = VIRT_START;
 
-    for (uint32_t i = 0, frame = KERNEL_START, virt = VIRT_START; i < kernel_pages; 
+    for (uint32_t i = 0, frame = KERNEL_START; i < kernel_pages; 
                 ++i, frame += PAGE_SIZE, virt += PAGE_SIZE) {
-        __map_page(pd, frame, virt, PTE_PRESENT | PTE_RW);
+        __map_page(pgdir, frame, virt, PTE_PRESENT | PTE_RW);
+    }
+
+    for (; virt < get_closest_page_down(KERNEL_VIRT_END); virt += PAGE_SIZE) {
+        __ptalloc(pgdir, virt);
+    } 
+}
+
+void __copy_kernel_mapping(page_directory_t* pgdir) {
+    // Copy the kernel mapping to the new pgdir.
+    for (uint32_t virt = VIRT_START; virt < get_closest_page_down(KERNEL_VIRT_END); virt += PAGE_SIZE) {
+        pgdir->page_tables[PDINDEX(virt)] = kpgdir->page_tables[PDINDEX(virt)];
     }
 }
 
-void __id_map(void) {
+void __id_map(page_directory_t* pgdir) {
     for (uint32_t i = 0, frame = 0, virt = 0; i < NUMBER_OF_PAGES; ++i ,frame += PAGE_SIZE, virt += PAGE_SIZE) {
-        __map_page(pd, frame, virt, PTE_PRESENT | PTE_RW);
+        __map_page(pgdir, frame, virt, PTE_PRESENT | PTE_RW);
     }
 }
 
-void __recursive_pgdt(void) {
-    pd->page_tables[1023] = GET_FRAME((uint32_t)pd) | PDE_RW | PDE_PRESENT; 
+void __virt_recursive_pgdt(page_directory_t* pgdir, void* phys_pgdir) {
+    pgdir->page_tables[1023] = GET_FRAME((uint32_t)phys_pgdir) | PDE_RW | PDE_PRESENT; 
+}
+
+void __recursive_pgdt(page_directory_t* pgdir) {
+    pgdir->page_tables[1023] = GET_FRAME((uint32_t)pgdir) | PDE_RW | PDE_PRESENT; 
 }
 
 bool __pt_present(uint32_t virt) {
@@ -132,30 +181,60 @@ void* __get_next_available(mm_zone_t* zone, uint32_t pgnum) {
     return NULL;
 }
 
-void init_vmm(void) {
-    pd = (page_directory_t*)kalloc_pg(1);
+procmem_t* vm_create(void) {
+    procmem_t* procmem = (procmem_t*)kmalloc(sizeof(procmem_t));
+    procmem->pgdir = (page_directory_t*)kalloc_pg(1);
+    if (NULL == procmem->pgdir) {
+        return NULL;
+    }
+
+    procmem->virt_pgdir = (page_directory_t*)mm_mmap_phys(&kzone, 1, (void*)procmem->pgdir);
+    if (NULL == procmem->virt_pgdir) {
+        return NULL;
+    }
 
     // Initiate page directory to not present.
-    __init_pd(pd);
+    __init_pd(procmem->virt_pgdir);
+
+    // We'll want to identity map our first 4MiB of memory (a part of the kernel 
+    // so the CPU can resolve the addresses).
+    __id_map(procmem->virt_pgdir);
+
+    // Now, we'll want to create a map for our kernel.
+    // This is a higher half kernel, so let's map it to 3GB+ addresses.
+    __copy_kernel_mapping(procmem->virt_pgdir);
+
+    // the recursive paging must not be copied, but replaced.
+    // that is due to a change in the physical address of the pgdir.
+    __virt_recursive_pgdt(procmem->virt_pgdir, procmem->pgdir);
+
+    return procmem;
+}
+
+void init_vmm(void) {
+    page_directory_t* pgdir = (page_directory_t*)kalloc_pg(1);
+
+    // Initiate page directory to not present.
+    __init_pd(pgdir);
 
     // Next, we'll need to map our first page table.
     // We'll want to identity map our first 4MiB of memory (a part of the kernel 
     // so the CPU can resolve the addresses).
-    __id_map();
+    __id_map(pgdir);
 
     // Now, we'll want to create a map for our kernel.
     // This is a higher half kernel, so let's map it to 3GB+ addresses.
-    __map_kernel();
+    __map_kernel_space(pgdir);
 
     // Seeing as we'll now be in paging mode,
     // we need a way to access the physical addresses of our
     // page tables. For that, we'll map PDE[1023] to &PD.
     // refer to [http://www.rohitab.com/discuss/topic/31139-tutorial-paging-memory-mapping-with-a-recursive-page-directory/]
     // for a really good explanation.
-    __recursive_pgdt();
+    __recursive_pgdt(pgdir);
 
     // Switch the page directory - paging is already enabled from boot.
-    __set_pgd(pd);
+    set_pgd(pgdir);
 }
 
 int8_t vmm_map(uint32_t frame, uint32_t virt) {
@@ -205,6 +284,22 @@ int8_t vmm_unmap(uint32_t virt) {
     }
 
     return 0;
+}
+
+void* mm_mmap_phys(mm_zone_t* zone, uint32_t pgnum, void* phys_address) {
+    void* virt_address = __get_next_available(zone, pgnum);
+    if (NULL == virt_address) {
+        return NULL;
+    }
+
+    for (uint32_t i = 0, frame = (uint32_t)phys_address, virt = (uint32_t)virt_address; 
+            i < pgnum; ++i, frame += PAGE_SIZE, virt += PAGE_SIZE) {
+        if (0 != vmm_map(frame, virt)) {
+            return NULL;
+        }
+    }
+
+    return virt_address;
 }
 
 // FIXME: very kernel focused, doubt this'll hold up in userspace.

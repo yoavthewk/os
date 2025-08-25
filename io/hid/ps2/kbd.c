@@ -3,7 +3,7 @@
 #include <libc/string.h>
 #include <arch/x86/cpu/comm.h>
 #include <arch/x86/8259/pic.h>
-#include <kernel/hid/kbd.h>
+#include <kernel/io/hid/kbd.h>
 #include <kernel/vga.h>
 #include <libc/mem.h>
 
@@ -49,7 +49,7 @@ void __kbwrite(char letter) {
     __kb_buf[__kb_idx] = '\0';
 }
 
-void __kbbackspace() {
+void __kbbackspace(void) {
     __kb_idx -= __kb_idx ? 1 : 0;
     __kb_buf[__kb_idx] = 0;
 }

@@ -1,12 +1,16 @@
 #include <stdint.h>
 #include <kernel/vga.h>
-#include <kernel/hid/kbd.h>
+#include <kernel/io/hid/kbd.h>
+#include <kernel/io/timer/timer.h>
 #include <libc/string.h>
 #include <arch/x86/cpu/idt.h>
+#include <arch/x86/cpu/gdt.h>
 #include <arch/x86/8259/pic.h>
 #include <kernel/memory/vmm.h>
 #include <kernel/memory/pmm.h>
 #include <kernel/memory/kmm.h>
+#include <kernel/acpi/acpi.h>
+#include <kernel/process/scheduler.h>
 
 #if defined(__linux__)
 #error "This was not compiled using a cross-compiler."
@@ -36,7 +40,10 @@ void kmain(void) {
     kprint("[kmain] INITIALIZING KHEAP...\n");
     init_kmm();
     kprint("[kmain] DONE INITIALIZING HEAP...\n");
+    init_gdt();
     kprint("Welcome!\n");
+    init_scheduler();
+    init_pit();
 
     char* line = (char*)kmalloc(256);
     while(0 != strcmp("END", line)) {

@@ -5,7 +5,7 @@ extern uint8_t phys_kernel_end; // linker variable.
 
 // We want to insert our bmap right after the kernel and make 
 // it a reserved space.
-// Each bit in the bmap allocates a page (for now);
+// Each bit(byte) in the bmap allocates a page (for now);
 // therefore, 4KiB of entries mean an allocation of above a GB.
 // Let's give it that for now. 
 // @note: kernel end should be aligned to PAGE_SIZE (peek at linker.ld if you don't understand).
@@ -16,10 +16,7 @@ uint8_t* __bmap;
 #define GET_PG_INDEX(pg) (((uint8_t*)pg - __start_pg) / PAGE_SIZE)
 
 // TODO: turn into bitmap? or maybe something more sophisticated?
-
-uint8_t* get_closest_page(void* addr) {
-    return (((uintptr_t)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
-}
+//       for this scope, this is okay, but refactor in a later project.
 
 void __null_out_bmap(void) {
     for (uint32_t i = 0; i < TOTAL_PAGES; ++i) {
@@ -58,6 +55,14 @@ void* __is_free_region(const uint32_t num, const uint32_t cur_pg) {
     // set as allocated in the bmap and return the address.
     __allocate_region(cur_pg, num);
     return __start_pg + PAGE_SIZE * cur_pg;
+}
+
+uint8_t* get_closest_page(void* addr) {
+    return (((uintptr_t)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1));
+}
+
+uint8_t* get_closest_page_down(void* addr) {
+    return (((uintptr_t)(addr) + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1)) - PAGE_SIZE;
 }
 
 void init_pmm(void) {

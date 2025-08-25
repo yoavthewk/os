@@ -1,4 +1,5 @@
 #include <libc/string.h>
+#include <stdbool.h>
 
 uint32_t strlen(char* str){
     uint32_t len = 0;
@@ -21,17 +22,25 @@ void reverse(char* str) {
     }
 }
 
-void itoa(int32_t num, char* str) {
+void itoa(int32_t num, char* buffer, int base) {
     uint32_t index = 0;
+    bool is_negative = 0;
+
+    if (num < 0 && base == 10) {
+        is_negative = 1;
+        num = -num;
+    }
 
     do {
-        str[index++] = (num % 10) + '0';
-        num /= 10;
+        buffer[index++] = (num % base) < 10 ? (num % base) + '0' : ((num % base) - 10) + 'A';
+        num /= base;
     } while(num != 0);
 
-    str[index] = '\0';
+    if (is_negative) buffer[index++] = '-';
 
-    reverse(str);
+    buffer[index] = '\0';
+
+    reverse(buffer);
 }
 
 uint8_t strcmp(char* first, char* second) {
@@ -51,4 +60,10 @@ uint8_t strcmp(char* first, char* second) {
     }
 
     return 0;
+}
+
+void strcpy(char* src, char* dst) {
+    for (uint32_t index = 0; src[index] != 0; ++index) {
+        dst[index] = src[index];
+    }
 }
